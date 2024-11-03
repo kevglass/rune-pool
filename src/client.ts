@@ -278,7 +278,8 @@ function updateUI(game: GameState) {
       showMessage("Touch and drag anywhere to shoot")
     }
 
-    div("shotsLeft").innerHTML = game.shotsRemaining + " " + (game.shotsRemaining > 1 ? "shots" : "shot")
+    div("shotsLeft").innerHTML =
+      game.shotsRemaining + " " + (game.shotsRemaining > 1 ? "shots" : "shot")
     div("turn").className = "turnOn"
     div("turn").style.display = "block"
     div("whoseTurn").innerHTML = getDisplayName(game.whoseTurn) + " Turn"

@@ -212,7 +212,7 @@ function takeShot(
 }
 
 function runComputerTurn(game: GameState) {
-  const angle = (Math.random() * Math.PI * 2)
+  const angle = Math.random() * Math.PI * 2
   const power = 150
   const dir = { x: Math.cos(angle) * power, y: Math.sin(angle) * power }
   takeShot(dir, game, COMPUTER_ID)
@@ -367,7 +367,7 @@ Rune.initLogic({
       const otherPlayer =
         otherPlayers.length > 0 ? otherPlayers[0] : COMPUTER_ID
 
-      const pottedWhite = game.potted.includes(WHITE);
+      const pottedWhite = game.potted.includes(WHITE)
 
       if (pottedWhite) {
         const cueBall: physics.DynamicRigidBody = physics.createCircle(
