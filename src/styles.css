@@ -1,0 +1,133 @@
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  overflow: hidden;
+  font-family: Impact, 'Arial Narrow Bold', sans-serif;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#message {
+  font-family: Arial, Helvetica, sans-serif;
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  top: 20%;
+  transform: translate(-50%, 0);
+  font-size: 5vh;
+  color: white;
+  text-shadow: 3px 3px rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.7);
+  padding: 1vh;
+  padding-left: 3vh;
+  padding-right: 3vh;
+  border-radius: 3vh;
+  pointer-events: none;
+}
+
+#whoseTurnAvatar {
+  transform: translate(0, 1.5vh);
+  width: 12vh;
+  height: 12vh;
+  top: -3vh;
+  left: 2vh;
+  position: absolute;
+  margin-right: 2vh;
+  border: 1px solid black;
+  border-radius: 100%;
+}
+
+#turnColor {
+  position: absolute;
+  right: 5vh;
+  bottom: -1.5vh;
+  font-size: 3vh;
+  padding-left: 3vh;
+  padding-right: 3vh;
+  height: 4vh;
+  line-height: 4.5vh;
+  border-radius: 3vh;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+}
+
+.yellow {
+  background: yellow;
+  border: 1px solid darkkhaki;
+  color: black;
+}
+
+.red {
+  content: "Red";
+  background: red;
+  border: 1px solid darkred;
+  color: white;
+}
+
+#whoseTurn {
+  display: inline-block;
+  color: black;
+  transform: translate(0, 1.5vh);
+  margin-left: 12vh;
+}
+
+#shotsLeft {
+  font-family: Arial, Helvetica, sans-serif;
+  position: absolute;
+  font-size: 4vh;
+  top: 0;
+  right: 3vh;
+}
+
+#turn {
+  pointer-events: none;
+  z-index: 1000;
+  background-color: rgba(255,255,255,0.5);
+  position: absolute;
+  width: 40%;
+  height: 10vh;
+  left: 50%;
+  padding-right: 5vh;
+  padding-left: 5vh;
+  border-radius: 3vh;
+  font-size: 5vh;
+  line-height: 7vh;
+  transform: translate(-50%,0);  
+}
+
+.turnOff {
+  bottom: -20%;
+  animation: backgroundSlideOff 0.5s linear
+}
+
+.turnOn {
+  bottom: 2%;
+  animation: backgroundSlideOn 0.5s linear
+}
+
+@keyframes backgroundSlideOff {
+  100% {
+    bottom: -20%;
+  }
+  0% {
+    bottom: 2%;
+  }
+}
+
+@keyframes backgroundSlideOn {
+  100% {
+    bottom: 2%;
+  }
+  0% {
+    bottom: -20%;
+  }
+}
