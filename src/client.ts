@@ -164,9 +164,9 @@ function drawTable(game: GameState) {
     const shape = body.shapes[0]
     if (shape.type === physics.ShapeType.CIRCLE) {
       const offsetx =
-        ((body.center.x - TABLE_WIDTH / 2) / (TABLE_WIDTH / 2)) * 2
+        ((body.center.x - TABLE_WIDTH / 2) / (TABLE_WIDTH / 2)) * (7 / scale)
       const offsety =
-        ((body.center.y - TABLE_HEIGHT / 2) / (TABLE_HEIGHT / 2)) * 2
+        ((body.center.y - TABLE_HEIGHT / 2) / (TABLE_HEIGHT / 2)) * (7 / scale)
       ctx.fillStyle = "rgba(0,0,0,0.2)"
       ctx.beginPath()
       ctx.arc(
@@ -336,7 +336,9 @@ function showMessage(message: string) {
           }
           if (event.type === "potted") {
             if (event.data !== WHITE) {
-              addRackBall(event.data)
+              setTimeout(() => {
+                addRackBall(event.data)
+              }, 500)
             }
           }
         }
