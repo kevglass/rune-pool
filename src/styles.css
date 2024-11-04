@@ -32,6 +32,8 @@ canvas {
   padding-right: 3vh;
   border-radius: 3vh;
   pointer-events: none;
+  width: 60%;
+  text-align: center;
 }
 
 #whoseTurnAvatar {

@@ -14,6 +14,7 @@ import {
 } from "./logic"
 import { getAssetUrl } from "./assets"
 import { PlayerId } from "rune-sdk"
+import { tr } from "./translate"
 
 const canvas = document.createElement("canvas")
 canvas.width = window.innerWidth
@@ -58,7 +59,7 @@ let startX = 0
 let startY = 0
 let dx = 0
 let dy = 0
-let messageToShow = "Touch and drag anywhere to shoot"
+let messageToShow = tr("Touch and drag anywhere to shoot")
 
 function div(id: string): HTMLDivElement {
   return document.getElementById(id) as HTMLDivElement
@@ -263,14 +264,14 @@ function getAvatarUrl(id: string) {
   return Rune.getPlayerInfo(id).avatarUrl
 }
 
-function getDisplayName(id: string) {
+function getDisplayNameTurn(id: string) {
   if (id === COMPUTER_ID) {
-    return "Computer's"
+    return tr("Computer's Turn")
   }
   if (id === localPlayerId) {
-    return "Your"
+    return tr("Your Turn")
   }
-  return Rune.getPlayerInfo(id).displayName + "'s"
+  return tr("Bob's Turn").replace("Bob", Rune.getPlayerInfo(id).displayName)
 }
 
 function updateUI(game: GameState) {
@@ -281,10 +282,10 @@ function updateUI(game: GameState) {
     }
 
     div("shotsLeft").innerHTML =
-      game.shotsRemaining + " " + (game.shotsRemaining > 1 ? "shots" : "shot")
+      game.shotsRemaining > 1 ? tr("1 shot") : tr("2 shots")
     div("turn").className = "turnOn"
     div("turn").style.display = "block"
-    div("whoseTurn").innerHTML = getDisplayName(game.whoseTurn) + " Turn"
+    div("whoseTurn").innerHTML = getDisplayNameTurn(game.whoseTurn)
     div("turn").style.background =
       game.whoseTurn === localPlayerId
         ? "rgba(255,255,255,0.6)"
@@ -296,7 +297,7 @@ function updateUI(game: GameState) {
       div("turnColor").style.display = "none"
     } else {
       div("turnColor").className = col === RED ? "red" : "yellow"
-      div("turnColor").innerHTML = col === RED ? "Red" : "Yellow"
+      div("turnColor").innerHTML = col === RED ? tr("red") : tr("yellow")
       div("turnColor").style.display = "block"
     }
 
@@ -350,7 +351,7 @@ function showMessage(message: string) {
             messageToShow = ""
           }
           if (event.type === "foul") {
-            messageToShow = "Foul! 2 Shots!"
+            messageToShow = tr("Foul! 2 Shots!")
           }
           if (event.type === "potted") {
             if (event.data !== WHITE) {
