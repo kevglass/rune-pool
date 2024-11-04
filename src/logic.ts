@@ -688,7 +688,6 @@ Rune.initLogic({
           }
         }
 
-
         if (!game.firstHitBall) {
           // didn't hit anything foul
           game.whoseTurn = otherPlayer
