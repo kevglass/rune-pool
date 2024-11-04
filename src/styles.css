@@ -104,6 +104,26 @@ canvas {
   transform: translate(-50%,0);  
 }
 
+#thinkBar {
+  border: 1px solid black;
+  width: 20vh;
+  height: 1vh;
+  bottom: 1vh;
+  position: absolute;
+  margin-left: 13vh;
+  border-radius: 1vh;
+  overflow: hidden
+}
+
+#thinkComplete {
+  width: 0%;
+  height: 1vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0,0,0,0.8)
+}
+
 .turnOff {
   bottom: -20%;
   animation: backgroundSlideOff 0.5s linear

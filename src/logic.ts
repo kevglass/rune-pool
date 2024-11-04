@@ -11,10 +11,13 @@ export const WHITE = "white"
 export const POWER_SCALE = 3
 export const MIN_POWER = 50
 export const COMPUTER_ID = "computer"
+export const COMPUTER_FRAMES_PER_LOGIC_FRAME = 20
+export const COMPUTER_ANGLE_STEP = Math.floor(360 / 25)
+export const COMPUTER_SIM_TIME_FRAMES = 60 // 2 seconds
 
 export type GameEvent = {
   id: number
-  type: "potted" | "foul"
+  type: "potted" | "foul" | "shot"
   data: string
 }
 
@@ -32,6 +35,19 @@ export interface GameState {
   nextEventId: number
   shot: boolean
   computerIndex: number
+  computerWorld: physics.World
+  computerStep: number
+  computerFirstHitBall?: string
+  computerMoveRating: number
+  computerMovePower: number
+  computerMoveAngle: number
+  computerMoveColor?: string
+  computerBestResult?: string
+  computerMoveResult?: string
+  computerBestAngle: number
+  computerBestRating: number
+  computerBestPower: number
+  computerTakeShotAt: number
 }
 
 type GameActions = {
@@ -200,6 +216,7 @@ function takeShot(
   if (game.whoseTurn !== playerId) {
     return
   }
+  game.events.push({ id: game.nextEventId++, type: "shot", data: "" })
   game.shot = true
 
   const cueBall = game.world.dynamicBodies.find((b) => b.id === game.cueBallId)
@@ -211,11 +228,222 @@ function takeShot(
   }
 }
 
+function takeComputerShot(game: GameState) {
+  // take shot - if nothing identified random shot
+  if (game.computerBestRating === 0) {
+    const angle = Math.random() * Math.PI * 2
+    const power = 150
+    const dir = { x: Math.cos(angle) * power, y: Math.sin(angle) * power }
+    takeShot(dir, game, COMPUTER_ID)
+  } else {
+    const angle = game.computerBestAngle
+    const power = game.computerBestPower
+    const dir = { x: Math.cos(angle) * power, y: Math.sin(angle) * power }
+    takeShot(dir, game, COMPUTER_ID)
+  }
+}
+
 function runComputerTurn(game: GameState) {
-  const angle = Math.random() * Math.PI * 2
-  const power = 150
-  const dir = { x: Math.cos(angle) * power, y: Math.sin(angle) * power }
-  takeShot(dir, game, COMPUTER_ID)
+  if (game.computerIndex >= 360) {
+    game.computerTakeShotAt = Rune.gameTime() + 1000
+  } else {
+    // copy the world to try out a shot
+    if (game.computerStep === 0) {
+      game.computerWorld = JSON.parse(JSON.stringify(game.world))
+      game.computerFirstHitBall = undefined
+      game.computerMoveRating = 0
+      game.computerMoveColor = game.playerCols[COMPUTER_ID]
+      game.computerMoveResult = "NO RESULT"
+
+      const angle = (game.computerIndex / 360) * Math.PI * 2
+      const power = 100 + Math.floor(Math.random() * 50)
+      const dir = { x: Math.cos(angle) * power, y: Math.sin(angle) * power }
+      game.computerMovePower = power
+      game.computerMoveAngle = angle
+
+      const cueBall = game.computerWorld.dynamicBodies.find(
+        (b) => b.id === game.cueBallId
+      )
+      if (cueBall) {
+        physics.applyVelocity(cueBall, {
+          x: dir.x * POWER_SCALE,
+          y: dir.y * POWER_SCALE,
+        })
+      }
+    }
+
+    for (
+      let i = game.computerStep;
+      i < game.computerStep + COMPUTER_FRAMES_PER_LOGIC_FRAME;
+      i++
+    ) {
+      const collisions = physics.worldStep(60, game.computerWorld)
+      collisions.push(...physics.worldStep(60, game.computerWorld))
+
+      // fake the table resistance
+      applyFriction(game.computerWorld)
+
+      if (!game.computerFirstHitBall) {
+        const remaining = game.computerWorld.dynamicBodies.filter(
+          (b) => b.data === game.playerCols[COMPUTER_ID]
+        ).length
+
+        for (const col of collisions) {
+          if (col.bodyAId === game.cueBallId) {
+            const otherBall = game.computerWorld.dynamicBodies.find(
+              (b) => b.id === col.bodyBId
+            )
+            if (otherBall) {
+              // white hit another ball
+              game.computerFirstHitBall = otherBall.data
+              if (!game.computerMoveColor && otherBall.data !== BLACK) {
+                game.computerMoveColor = otherBall.data
+              }
+            }
+          }
+          if (col.bodyBId === game.cueBallId) {
+            const otherBall = game.computerWorld.dynamicBodies.find(
+              (b) => b.id === col.bodyAId
+            )
+            if (otherBall) {
+              // white hit another ball
+              game.computerFirstHitBall = otherBall.data
+              if (!game.computerMoveColor && otherBall.data !== BLACK) {
+                game.computerMoveColor = otherBall.data
+              }
+            }
+          }
+        }
+
+        if (
+          game.computerFirstHitBall &&
+          game.computerFirstHitBall !== game.computerMoveColor
+        ) {
+          if (remaining === 0 && game.computerFirstHitBall === BLACK) {
+            game.computerMoveResult = "HIT OURS"
+            game.computerMoveRating = 1
+          } else {
+            // hit the wrong ball first, this is a bad move - step
+            // to the end and skip out
+            game.computerMoveResult = "HIT WRONG BALL"
+            game.computerStep = COMPUTER_SIM_TIME_FRAMES
+            game.computerMoveRating = 0
+          }
+          break
+        } else if (game.computerFirstHitBall) {
+          // hit ours, reasonable move
+          game.computerMoveResult = "HIT OURS"
+          game.computerMoveRating = 1
+        }
+      }
+      if (game.computerStep >= COMPUTER_SIM_TIME_FRAMES) {
+        break
+      }
+      const pockets = game.computerWorld.staticBodies.filter(
+        (s) => s.shapes[0].sensor
+      )
+      for (const pocket of pockets) {
+        const shape = pocket.shapes[0]
+        if (shape.sensorColliding) {
+          for (const collision of shape.sensorCollisions) {
+            const ball = game.computerWorld.dynamicBodies.find(
+              (b) => b.shapes[0].id === collision
+            )
+            if (ball) {
+              // potted a ball
+              if (ball.data === WHITE) {
+                game.computerMoveResult = "POTTED WHITE"
+                // potted the white, not a good move
+                game.computerStep = COMPUTER_SIM_TIME_FRAMES
+                game.computerMoveRating = 0
+                break
+              } else if (
+                game.computerMoveColor &&
+                ball.data === game.computerMoveColor
+              ) {
+                // potter one of ours, good move in theory
+                game.computerMoveResult = "POTTED OURS"
+                game.computerMoveRating = 2
+              } else if (ball.data === BLACK) {
+                // if we still have balls on the table this is bad
+                if (
+                  game.computerWorld.dynamicBodies.find(
+                    (b) => b.data == game.computerMoveColor
+                  ) ||
+                  !game.computerMoveColor
+                ) {
+                  game.computerMoveResult = "POTTED BLACK BAD"
+                  game.computerStep = COMPUTER_SIM_TIME_FRAMES
+                  game.computerMoveRating = 0
+                  break
+                } else {
+                  // otherwise its the winning move
+                  game.computerMoveResult = "POTTED BLACK GOOD"
+                  game.computerMoveRating = 3
+                }
+              } else if (
+                game.computerMoveColor &&
+                ball.data !== game.computerMoveColor
+              ) {
+                // potted one of theirs, bad move
+                game.computerMoveResult = "POTTED THEIRS"
+                game.computerStep = COMPUTER_SIM_TIME_FRAMES
+                game.computerMoveRating = 0
+                break
+              }
+            }
+          }
+          if (game.computerStep >= COMPUTER_SIM_TIME_FRAMES) {
+            break
+          }
+        }
+        if (game.computerStep >= COMPUTER_SIM_TIME_FRAMES) {
+          break
+        }
+      }
+
+      if (physics.atRest(game.computerWorld)) {
+        game.computerStep = COMPUTER_SIM_TIME_FRAMES
+      }
+    }
+
+    game.computerStep += COMPUTER_FRAMES_PER_LOGIC_FRAME
+  }
+
+  if (game.computerStep >= COMPUTER_SIM_TIME_FRAMES) {
+    if (!game.computerFirstHitBall) {
+      game.computerMoveResult = "DIDN'T HIT ANYTHING"
+      game.computerStep = COMPUTER_SIM_TIME_FRAMES
+      game.computerMoveRating = 0
+    }
+    if (game.computerMoveRating > game.computerBestRating) {
+      game.computerBestRating = game.computerMoveRating
+      game.computerBestPower = game.computerMovePower
+      game.computerBestAngle = game.computerMoveAngle
+      game.computerBestResult = game.computerMoveResult
+    }
+    game.computerIndex += COMPUTER_ANGLE_STEP
+    game.computerStep = 0
+  }
+}
+
+function applyFriction(world: physics.World) {
+  const friction = 0.97
+  const minVelocity = 1
+  for (const body of world.dynamicBodies) {
+    body.velocity.x *= friction
+    body.velocity.y *= friction
+    if (Math.abs(body.velocity.x) < minVelocity) {
+      body.velocity.x = 0
+    }
+    if (Math.abs(body.velocity.y) < minVelocity) {
+      body.velocity.y = 0
+    }
+
+    if (body.velocity.x === 0 && body.velocity.y === 0) {
+      body.restingTime = 1
+    }
+  }
 }
 
 Rune.initLogic({
@@ -249,6 +477,15 @@ Rune.initLogic({
       nextEventId: 1,
       shot: false,
       computerIndex: 0,
+      computerStep: 0,
+      computerWorld: physics.createWorld(),
+      computerMoveRating: 0,
+      computerBestAngle: 0,
+      computerBestRating: 0,
+      computerBestPower: 0,
+      computerMoveAngle: 0,
+      computerMovePower: 0,
+      computerTakeShotAt: 0,
     }
 
     const order = [
@@ -296,7 +533,12 @@ Rune.initLogic({
     game.startGame = false
     if (physics.atRest(game.world)) {
       if (game.whoseTurn === COMPUTER_ID) {
-        runComputerTurn(game)
+        if (game.computerTakeShotAt === 0) {
+          runComputerTurn(game)
+        } else if (Rune.gameTime() > game.computerTakeShotAt) {
+          takeComputerShot(game)
+          game.computerTakeShotAt = 0
+        }
       }
       return
     }
@@ -304,22 +546,27 @@ Rune.initLogic({
     const collisions = physics.worldStep(60, game.world)
     collisions.push(...physics.worldStep(60, game.world))
 
+    // fake the table resistence
+    applyFriction(game.world)
+
     // look for ball collisions
-    for (const col of collisions) {
-      if (col.bodyAId === game.cueBallId) {
-        const otherBall = game.world.dynamicBodies.find(
-          (b) => b.id === col.bodyBId
-        )
-        if (otherBall) {
-          game.firstHitBall = otherBall.data
+    if (!game.firstHitBall) {
+      for (const col of collisions) {
+        if (col.bodyAId === game.cueBallId) {
+          const otherBall = game.world.dynamicBodies.find(
+            (b) => b.id === col.bodyBId
+          )
+          if (otherBall) {
+            game.firstHitBall = otherBall.data
+          }
         }
-      }
-      if (col.bodyBId === game.cueBallId) {
-        const otherBall = game.world.dynamicBodies.find(
-          (b) => b.id === col.bodyAId
-        )
-        if (otherBall) {
-          game.firstHitBall = otherBall.data
+        if (col.bodyBId === game.cueBallId) {
+          const otherBall = game.world.dynamicBodies.find(
+            (b) => b.id === col.bodyAId
+          )
+          if (otherBall) {
+            game.firstHitBall = otherBall.data
+          }
         }
       }
     }
@@ -340,21 +587,23 @@ Rune.initLogic({
               type: "potted",
               data: ball.data,
             })
+
+            const otherPlayers = allPlayerIds.filter(
+              (i) => i !== game.whoseTurn
+            )
+            const otherPlayer =
+              otherPlayers.length > 0 ? otherPlayers[0] : COMPUTER_ID
+
+            if (
+              !game.playerCols[game.whoseTurn] &&
+              [RED, YELLOW].includes(ball.data)
+            ) {
+              game.playerCols[game.whoseTurn] = ball.data
+              game.playerCols[otherPlayer] = ball.data === RED ? YELLOW : RED
+              game.shotsRemaining = 1
+            }
           }
         }
-      }
-    }
-    // fake the table resistence
-    const friction = 0.98
-    const minVelocity = 1
-    for (const body of game.world.dynamicBodies) {
-      body.velocity.x *= friction
-      body.velocity.y *= friction
-      if (Math.abs(body.velocity.x) < minVelocity) {
-        body.velocity.x = 0
-      }
-      if (Math.abs(body.velocity.y) < minVelocity) {
-        body.velocity.y = 0
       }
     }
 
@@ -362,6 +611,7 @@ Rune.initLogic({
       game.shotsRemaining--
 
       // evaluate the game now the world has come to rest
+      const startingCol = game.playerCols[game.whoseTurn]
       const currentCol = game.playerCols[game.whoseTurn]
       const otherPlayers = allPlayerIds.filter((i) => i !== game.whoseTurn)
       const otherPlayer =
@@ -438,16 +688,24 @@ Rune.initLogic({
           }
         }
 
+
         if (!game.firstHitBall) {
           // didn't hit anything foul
           game.whoseTurn = otherPlayer
           game.shotsRemaining = 2
           game.events.push({ id: game.nextEventId++, type: "foul", data: "" })
-        } else if (game.firstHitBall !== currentCol && currentCol) {
-          // hit the wrong ball, foul
-          game.whoseTurn = otherPlayer
-          game.shotsRemaining = 2
-          game.events.push({ id: game.nextEventId++, type: "foul", data: "" })
+        } else if (game.firstHitBall !== startingCol && startingCol) {
+          const remainingBalls = game.world.dynamicBodies.filter(
+            (b) => b.data === startingCol
+          ).length
+          if (game.firstHitBall === BLACK && remainingBalls === 0) {
+            // hit the black when we have none left is not a foul
+          } else {
+            // hit the wrong ball, foul
+            game.whoseTurn = otherPlayer
+            game.shotsRemaining = 2
+            game.events.push({ id: game.nextEventId++, type: "foul", data: "" })
+          }
         }
       }
 
@@ -460,6 +718,9 @@ Rune.initLogic({
       }
       if (game.whoseTurn == COMPUTER_ID) {
         game.computerIndex = 0
+        game.computerBestAngle = 0
+        game.computerBestRating = 0
+        game.computerBestPower = 0
       }
     }
   },

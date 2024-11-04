@@ -8,12 +8,15 @@
 </head>
 
 <body>
-  <div id="message">Touch and drag anywhere to shoot</div>
+  <div id="message"></div>
   <div id="turn">
     <image id="whoseTurnAvatar"></image>
     <div id="whoseTurn">Your Turn</div>
     <div id="turnColor" class="yellow">Yellow</div>
     <div id="shotsLeft"></div>
+    <div id="thinkBar">
+      <div id="thinkComplete"></div>
+    </div>
   </div>
   <script type="module" src="/src/logic.ts"></script>
   <script type="module" src="/src/client.ts"></script>

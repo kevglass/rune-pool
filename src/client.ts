@@ -31,6 +31,7 @@ let shownTip = false
 let localPlayerId: PlayerId | undefined
 let whoseTurn: string
 let lastEventProcessed: number = 0
+let atRest: boolean = false
 
 type RackBall = {
   y: number
@@ -57,6 +58,7 @@ let startX = 0
 let startY = 0
 let dx = 0
 let dy = 0
+let messageToShow = "Touch and drag anywhere to shoot"
 
 function div(id: string): HTMLDivElement {
   return document.getElementById(id) as HTMLDivElement
@@ -98,7 +100,7 @@ if (touchDevice) {
 }
 
 function startDrag(x: number, y: number) {
-  if (whoseTurn !== localPlayerId) {
+  if (whoseTurn !== localPlayerId || !atRest) {
     return
   }
   startX = x
@@ -107,7 +109,7 @@ function startDrag(x: number, y: number) {
 }
 
 function moveDrag(x: number, y: number) {
-  if (whoseTurn !== localPlayerId) {
+  if (whoseTurn !== localPlayerId || !atRest) {
     return
   }
   dx = x - startX
@@ -115,7 +117,7 @@ function moveDrag(x: number, y: number) {
 }
 
 function endDrag(x: number, y: number) {
-  if (whoseTurn !== localPlayerId) {
+  if (whoseTurn !== localPlayerId || !atRest) {
     return
   }
   dx = x - startX
@@ -164,9 +166,9 @@ function drawTable(game: GameState) {
     const shape = body.shapes[0]
     if (shape.type === physics.ShapeType.CIRCLE) {
       const offsetx =
-        ((body.center.x - TABLE_WIDTH / 2) / (TABLE_WIDTH / 2)) * (7 / scale)
+        ((body.center.x - TABLE_WIDTH / 2) / (TABLE_WIDTH / 2)) * (4 / scale)
       const offsety =
-        ((body.center.y - TABLE_HEIGHT / 2) / (TABLE_HEIGHT / 2)) * (7 / scale)
+        ((body.center.y - TABLE_HEIGHT / 2) / (TABLE_HEIGHT / 2)) * (4 / scale)
       ctx.fillStyle = "rgba(0,0,0,0.2)"
       ctx.beginPath()
       ctx.arc(
@@ -297,6 +299,13 @@ function updateUI(game: GameState) {
       div("turnColor").innerHTML = col === RED ? "Red" : "Yellow"
       div("turnColor").style.display = "block"
     }
+
+    if (game.whoseTurn === COMPUTER_ID) {
+      div("thinkBar").style.display = "block"
+      div("thinkComplete").style.width = (game.computerIndex / 360) * 100 + "%"
+    } else {
+      div("thinkBar").style.display = "none"
+    }
   } else {
     div("turn").className = "turnOff"
     div("message").style.display = "none"
@@ -304,8 +313,12 @@ function updateUI(game: GameState) {
 }
 
 function showMessage(message: string) {
-  div("message").innerHTML = message
-  div("message").style.display = "block"
+  if (message.length > 0) {
+    div("message").innerHTML = message
+    div("message").style.display = "block"
+  } else {
+    div("message").style.display = "none"
+  }
 }
 
 ;(async () => {
@@ -326,13 +339,18 @@ function showMessage(message: string) {
       drawTable(game)
       updateUI(game)
 
+      atRest = physics.atRest(game.world)
+
       for (const event of game.events) {
         if (event.id > lastEventProcessed) {
           lastEventProcessed = event.id
 
           // new event
+          if (event.type === "shot") {
+            messageToShow = ""
+          }
           if (event.type === "foul") {
-            showMessage("Foul! 2 Shots!")
+            messageToShow = "Foul! 2 Shots!"
           }
           if (event.type === "potted") {
             if (event.data !== WHITE) {
@@ -342,6 +360,10 @@ function showMessage(message: string) {
             }
           }
         }
+      }
+
+      if (atRest) {
+        showMessage(messageToShow)
       }
     },
   })
