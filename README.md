@@ -1,28 +1,13 @@
-# Getting Started with Rune
+# Scorched Turf
 
-### `npm run dev`
+A game using the Rune SDK to play multiplayer 2d pool game. This isn't an example of stellar coding, just a simple fun physics based game.
 
-Runs the game in Dev UI.
+_All game assets are licensed for use in these projects. They remain copyright of their authors._
 
-The page will reload when you make changes.
+_You can find the rest of my rune games here https://github.com/kevglass/rune-games_
 
-### `npm run upload`
+## How to Play
 
-Builds the game and starts upload process to Rune.
-
-### `npm run build`
-
-Builds the game. You can then upload it to Rune using `npx rune-games-cli@latest upload`.
-
-### `npm run lint`
-
-Runs the validation rules. You can read about them in the [docs on server-side logic](https://developers.rune.ai/docs/advanced/server-side-logic).
-
-### `npm run typecheck`
-
-Verifies that TypeScript is valid.
-
-
-## Learn More
-
-See the [Rune docs](https://developers.rune.ai/docs/quick-start) for more info. You can also ask any questions in the [Rune Discord](https://discord.gg/rune-devs), we're happy to help!
+* Wait for your turn
+* Drag anywhere to hit the cue ball
+* Release to shoot the ball
