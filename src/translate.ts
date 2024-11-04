@@ -1,6 +1,6 @@
 import translations from "./assets/translations.json"
 
-const lang = 
+const lang =
   navigator.languages && navigator.languages.length > 0
     ? navigator.languages[0].substring(0, 2)
     : navigator.language.substring(0, 2)
