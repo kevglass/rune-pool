@@ -75,11 +75,11 @@ if (touchDevice) {
     mouseDown = true
     startDrag(e.touches[0].clientX, e.touches[0].clientY)
   })
-  canvas.addEventListener("touchmove", (e) => {
-    mouseDown = false
-    endDrag(e.touches[0].clientX, e.touches[0].clientY)
-  })
   canvas.addEventListener("touchend", (e) => {
+    mouseDown = false
+    endDrag(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
+  })
+  canvas.addEventListener("touchmove", (e) => {
     if (mouseDown) {
       moveDrag(e.touches[0].clientX, e.touches[0].clientY)
     }
