@@ -285,7 +285,7 @@ function updateUI(game: GameState) {
     }
 
     div("shotsLeft").innerHTML =
-      game.shotsRemaining > 1 ? tr("1 shot") : tr("2 shots")
+      game.shotsRemaining < 2 ? tr("1 shot") : tr("2 shots")
     div("turn").className = "turnOn"
     div("turn").style.display = "block"
     div("whoseTurn").innerHTML = getDisplayNameTurn(game.whoseTurn)
