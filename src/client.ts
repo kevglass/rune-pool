@@ -84,7 +84,7 @@ if (touchDevice) {
       moveDrag(e.touches[0].clientX, e.touches[0].clientY)
     }
   })
-  window.addEventListener("touchcancel", () => {
+  document.addEventListener("touchcancel", () => {
     endDrag(startX, startY)
   })
 } else {
