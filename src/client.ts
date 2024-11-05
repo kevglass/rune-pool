@@ -84,6 +84,9 @@ if (touchDevice) {
       moveDrag(e.touches[0].clientX, e.touches[0].clientY)
     }
   })
+  window.addEventListener("touchcancel", () => {
+    endDrag(startX, startY)
+  })
 } else {
   canvas.addEventListener("mousedown", (e) => {
     mouseDown = true
