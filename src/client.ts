@@ -59,7 +59,7 @@ let startX = 0
 let startY = 0
 let dx = 0
 let dy = 0
-let messageToShow = tr("Touch and drag anywhere to shoot")
+let messageToShow: string = ""
 
 function div(id: string): HTMLDivElement {
   return document.getElementById(id) as HTMLDivElement
@@ -329,13 +329,19 @@ function showMessage(message: string) {
   tableImage = await loadImage(getAssetUrl("table.png"))
   floorImage = await loadImage(getAssetUrl("floor.png"))
   Rune.initClient({
-    onChange: ({ game, yourPlayerId }) => {
+    onChange: ({ game, yourPlayerId, action }) => {
+      if (action && action.name === "shot") {
+        messageToShow = ""
+      }
       // reinit everything
       if (game.startGame) {
         lastEventProcessed = 0
         shownTip = false
         localPlayerId = undefined
         rack = []
+        if (yourPlayerId === game.whoseTurn) {
+          messageToShow = tr("Touch and drag anywhere to shoot")
+        }
       }
 
       localPlayerId = yourPlayerId
@@ -350,9 +356,6 @@ function showMessage(message: string) {
           lastEventProcessed = event.id
 
           // new event
-          if (event.type === "shot") {
-            messageToShow = ""
-          }
           if (event.type === "foul") {
             messageToShow = tr("Foul! 2 Shots!")
           }

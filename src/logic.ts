@@ -31,6 +31,7 @@ export interface GameState {
   potted: string[]
   shotsRemaining: number
   events: GameEvent[]
+  atRest: boolean
   firstHitBall?: string
   nextEventId: number
   shot: boolean
@@ -216,7 +217,6 @@ function takeShot(
   if (game.whoseTurn !== playerId) {
     return
   }
-  game.events.push({ id: game.nextEventId++, type: "shot", data: "" })
   game.shot = true
 
   const cueBall = game.world.dynamicBodies.find((b) => b.id === game.cueBallId)
@@ -468,6 +468,7 @@ Rune.initLogic({
     const state: GameState = {
       startGame: true,
       world,
+      atRest: false,
       cueBallId: cueBall.id,
       playerCols: {},
       whoseTurn: allPlayerIds[0],
@@ -532,6 +533,7 @@ Rune.initLogic({
     game.events = []
     game.startGame = false
     if (physics.atRest(game.world)) {
+      game.atRest = true
       if (game.whoseTurn === COMPUTER_ID) {
         if (game.computerTakeShotAt === 0) {
           runComputerTurn(game)
@@ -543,6 +545,10 @@ Rune.initLogic({
       return
     }
 
+    if (game.atRest) {
+      game.atRest = false
+      game.events.push({ id: game.nextEventId++, type: "shot", data: "" })
+    }
     const collisions = physics.worldStep(60, game.world)
     collisions.push(...physics.worldStep(60, game.world))
 
