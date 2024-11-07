@@ -16,6 +16,25 @@ import { getAssetUrl } from "./assets"
 import { PlayerId } from "rune-sdk"
 import { tr } from "./translate"
 
+const COLS: Record<number, string> = {
+  1: "#e2e50e",
+  2: "#141895",
+  3: "#db1b18",
+  4: "#800a7a",
+  5: "#e85007",
+  6: "#e85007",
+  7: "#990f0d",
+  8: "black",
+  9: "#e2e50e",
+  10: "#141895",
+  11: "#db1b18",
+  12: "#800a7a",
+  13: "#e85007",
+  14: "#e85007",
+  15: "#990f0d",
+}
+
+const EIGHT_BALL = false
 const canvas = document.createElement("canvas")
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
@@ -38,15 +57,17 @@ type RackBall = {
   y: number
   col: string
   target: number
+  num: number
 }
 
 let rack: RackBall[] = []
 
-function addRackBall(col: string) {
+function addRackBall(col: string, num: number) {
   rack.push({
     col,
     y: TABLE_HEIGHT * 0.86,
     target: TABLE_HEIGHT * 0.21 + rack.length * BALL_SIZE * 2,
+    num,
   })
 }
 
@@ -72,11 +93,9 @@ function img(id: string): HTMLImageElement {
 const touchDevice = "ontouchstart" in document.documentElement
 if (touchDevice) {
   canvas.addEventListener("touchstart", (e) => {
-    mouseDown = true
     startDrag(e.touches[0].clientX, e.touches[0].clientY)
   })
   canvas.addEventListener("touchend", (e) => {
-    mouseDown = false
     endDrag(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
   })
   canvas.addEventListener("touchmove", (e) => {
@@ -89,11 +108,9 @@ if (touchDevice) {
   })
 } else {
   canvas.addEventListener("mousedown", (e) => {
-    mouseDown = true
     startDrag(e.clientX, e.clientY)
   })
   canvas.addEventListener("mouseup", (e) => {
-    mouseDown = false
     endDrag(e.clientX, e.clientY)
   })
   canvas.addEventListener("mousemove", (e) => {
@@ -107,9 +124,11 @@ function startDrag(x: number, y: number) {
   if (whoseTurn !== localPlayerId || !atRest) {
     return
   }
+  mouseDown = true
   startX = x
   startY = y
   div("message").style.display = "none"
+  messageToShow = ""
 }
 
 function moveDrag(x: number, y: number) {
@@ -124,6 +143,7 @@ function endDrag(x: number, y: number) {
   if (whoseTurn !== localPlayerId || !atRest) {
     return
   }
+  mouseDown = false
   dx = x - startX
   dy = y - startY
   dx /= scale
@@ -145,6 +165,94 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
       resolve(image)
     })
   })
+}
+
+function drawBall(
+  data: { col: string; num: number },
+  x: number,
+  y: number,
+  radius: number,
+  angle: number,
+  ctx: CanvasRenderingContext2D
+): void {
+  ctx.save()
+
+  if (EIGHT_BALL && data.col !== WHITE) {
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.clip()
+
+    const fullRotation = radius * 4
+    const angX = ((x % fullRotation) / fullRotation) * Math.PI * 2
+    const angY = ((y % fullRotation) / fullRotation) * Math.PI * 2
+    ctx.save()
+    const stripe = data.num > 8
+    const stripeSize = radius
+    ctx.fillStyle = stripe ? "white" : COLS[data.num]
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+
+    const xpos = Math.sin(angX)
+    const ypos = Math.sin(angY)
+
+    const spaceSize = radius * 0.5
+
+    if (angY > Math.PI / 2 && angY < Math.PI * 1.5) {
+      ctx.translate(-xpos * radius, -ypos * radius)
+    } else {
+      ctx.translate(-xpos * radius, ypos * radius)
+    }
+
+    ctx.translate(x, y)
+    ctx.rotate(angle / 360 + Math.PI * 2)
+
+    if (stripe) {
+      ctx.fillStyle = COLS[data.num]
+      ctx.fillRect(-radius * 2, -stripeSize / 2, radius * 4, stripeSize)
+    }
+
+    if (
+      angY > Math.PI / 2 &&
+      angY < Math.PI * 1.5 &&
+      angX > Math.PI / 2 &&
+      angX < Math.PI * 1.5
+    ) {
+      ctx.fillStyle = "white"
+      ctx.beginPath()
+      ctx.arc(0, 0, spaceSize, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.textAlign = "center"
+      ctx.font = "bold 3px Arial"
+      ctx.fillStyle = "black"
+      ctx.fillText("" + data.num, 0, 1)
+    }
+
+    ctx.restore()
+  } else {
+    ctx.fillStyle = data.col
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  const shineWeight = EIGHT_BALL ? 0.25 : data.col === YELLOW ? 1 : 0.5
+  ctx.strokeStyle = "rgba(0,0,0,0.5)"
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = "rgba(255,255,255," + shineWeight + ")"
+  ctx.beginPath()
+  const xoffset = Math.floor(x) % 2
+  const yoffset = Math.floor(y) % 2
+  ctx.arc(
+    x + xoffset / scale - radius / 4,
+    y + yoffset / scale - radius / 4,
+    radius / 4,
+    0,
+    Math.PI * 2
+  )
+  ctx.fill()
+
+  ctx.restore()
 }
 
 function drawTable(game: GameState) {
@@ -189,34 +297,21 @@ function drawTable(game: GameState) {
     const shape = body.shapes[0]
     if (shape.type === physics.ShapeType.CIRCLE) {
       if (body.data) {
-        ctx.fillStyle = body.data
-        ctx.beginPath()
-        ctx.arc(body.center.x, body.center.y, shape.bounds, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.strokeStyle = "rgba(0,0,0,0.5)"
-        ctx.beginPath()
-        ctx.arc(body.center.x, body.center.y, shape.bounds, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.fillStyle =
-          body.data === YELLOW ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.5)"
-        ctx.beginPath()
-        const xoffset = Math.floor(body.center.x) % 2
-        const yoffset = Math.floor(body.center.y) % 2
-        ctx.arc(
-          body.center.x + xoffset / scale - shape.bounds / 4,
-          body.center.y + yoffset / scale - shape.bounds / 4,
-          shape.bounds / 4,
-          0,
-          Math.PI * 2
+        drawBall(
+          body.data,
+          body.center.x,
+          body.center.y,
+          shape.bounds,
+          body.angle,
+          ctx
         )
-        ctx.fill()
       }
     }
   }
   if (mouseDown) {
     const cueBall = physics
       .allBodies(world)
-      .find((body) => body.data === "white")
+      .find((body) => body.data.col === "white")
     if (cueBall) {
       ctx.lineWidth = 5
       ctx.setLineDash([5, 1])
@@ -243,14 +338,7 @@ function drawTable(game: GameState) {
       ball.y -= 1
     }
 
-    ctx.fillStyle = ball.col
-    ctx.beginPath()
-    ctx.arc(TABLE_WIDTH * 1.069, ball.y, BALL_SIZE - 0.5, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = "rgba(0,0,0,0.5)"
-    ctx.beginPath()
-    ctx.arc(TABLE_WIDTH * 1.069, ball.y, BALL_SIZE - 0.5, 0, Math.PI * 2)
-    ctx.stroke()
+    drawBall(ball, TABLE_WIDTH * 1.069, ball.y, BALL_SIZE - 0.5, 0, ctx)
     ctx.fillStyle = "rgba(0,0,0,0.25)"
     ctx.beginPath()
     ctx.arc(TABLE_WIDTH * 1.069, ball.y, BALL_SIZE - 0.5, 0, Math.PI * 2)
@@ -299,8 +387,13 @@ function updateUI(game: GameState) {
     if (!col) {
       div("turnColor").style.display = "none"
     } else {
-      div("turnColor").className = col === RED ? "red" : "yellow"
-      div("turnColor").innerHTML = col === RED ? tr("red") : tr("yellow")
+      if (EIGHT_BALL) {
+        div("turnColor").className = col === RED ? "stripes" : "spots"
+        div("turnColor").innerHTML = col === RED ? tr("stripes") : tr("spots")
+      } else {
+        div("turnColor").className = col === RED ? "red" : "yellow"
+        div("turnColor").innerHTML = col === RED ? tr("red") : tr("yellow")
+      }
       div("turnColor").style.display = "block"
     }
 
@@ -362,7 +455,7 @@ function showMessage(message: string) {
           if (event.type === "potted") {
             if (event.data !== WHITE) {
               setTimeout(() => {
-                addRackBall(event.data)
+                addRackBall(event.data, event.num!)
               }, 500)
             }
           }

@@ -19,6 +19,7 @@ export type GameEvent = {
   id: number
   type: "potted" | "foul" | "shot"
   data: string
+  num?: number
 }
 
 export type Cells = (PlayerId | null)[]
@@ -72,7 +73,7 @@ function createCushion(
     width,
     height,
     0,
-    0,
+    0.5,
     0.9
   )
   physics.addBody(world, cushion)
@@ -285,7 +286,7 @@ function runComputerTurn(game: GameState) {
 
       if (!game.computerFirstHitBall) {
         const remaining = game.computerWorld.dynamicBodies.filter(
-          (b) => b.data === game.playerCols[COMPUTER_ID]
+          (b) => b.data.col === game.playerCols[COMPUTER_ID]
         ).length
 
         for (const col of collisions) {
@@ -295,9 +296,9 @@ function runComputerTurn(game: GameState) {
             )
             if (otherBall) {
               // white hit another ball
-              game.computerFirstHitBall = otherBall.data
-              if (!game.computerMoveColor && otherBall.data !== BLACK) {
-                game.computerMoveColor = otherBall.data
+              game.computerFirstHitBall = otherBall.data.col
+              if (!game.computerMoveColor && otherBall.data.col !== BLACK) {
+                game.computerMoveColor = otherBall.data.col
               }
             }
           }
@@ -307,9 +308,9 @@ function runComputerTurn(game: GameState) {
             )
             if (otherBall) {
               // white hit another ball
-              game.computerFirstHitBall = otherBall.data
-              if (!game.computerMoveColor && otherBall.data !== BLACK) {
-                game.computerMoveColor = otherBall.data
+              game.computerFirstHitBall = otherBall.data.col
+              if (!game.computerMoveColor && otherBall.data.col !== BLACK) {
+                game.computerMoveColor = otherBall.data.col
               }
             }
           }
@@ -351,7 +352,7 @@ function runComputerTurn(game: GameState) {
             )
             if (ball) {
               // potted a ball
-              if (ball.data === WHITE) {
+              if (ball.data.col === WHITE) {
                 game.computerMoveResult = "POTTED WHITE"
                 // potted the white, not a good move
                 game.computerStep = COMPUTER_SIM_TIME_FRAMES
@@ -359,16 +360,16 @@ function runComputerTurn(game: GameState) {
                 break
               } else if (
                 game.computerMoveColor &&
-                ball.data === game.computerMoveColor
+                ball.data.col === game.computerMoveColor
               ) {
                 // potter one of ours, good move in theory
                 game.computerMoveResult = "POTTED OURS"
                 game.computerMoveRating = 2
-              } else if (ball.data === BLACK) {
+              } else if (ball.data.col === BLACK) {
                 // if we still have balls on the table this is bad
                 if (
                   game.computerWorld.dynamicBodies.find(
-                    (b) => b.data == game.computerMoveColor
+                    (b) => b.data.col == game.computerMoveColor
                   ) ||
                   !game.computerMoveColor
                 ) {
@@ -383,7 +384,7 @@ function runComputerTurn(game: GameState) {
                 }
               } else if (
                 game.computerMoveColor &&
-                ball.data !== game.computerMoveColor
+                ball.data.col !== game.computerMoveColor
               ) {
                 // potted one of theirs, bad move
                 game.computerMoveResult = "POTTED THEIRS"
@@ -460,7 +461,10 @@ Rune.initLogic({
       1,
       1
     ) as physics.DynamicRigidBody
-    cueBall.data = WHITE
+    cueBall.data = {
+      col: WHITE,
+      num: 0,
+    }
     physics.addBody(world, cueBall)
 
     createTable(world)
@@ -506,6 +510,7 @@ Rune.initLogic({
       YELLOW,
       RED,
     ]
+    const numbers = [1, 11, 5, 2, 8, 10, 6, 7, 14, 4, 6, 15, 13, 3, 12]
     let index = 0
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j <= i; j++) {
@@ -517,10 +522,13 @@ Rune.initLogic({
           },
           BALL_SIZE,
           1,
-          0,
+          1,
           1
         )
-        ball.data = order[index]
+        ball.data = {
+          col: order[index],
+          num: numbers[index],
+        }
         index++
         physics.addBody(state.world, ball)
       }
@@ -563,7 +571,7 @@ Rune.initLogic({
             (b) => b.id === col.bodyBId
           )
           if (otherBall) {
-            game.firstHitBall = otherBall.data
+            game.firstHitBall = otherBall.data.col
           }
         }
         if (col.bodyBId === game.cueBallId) {
@@ -571,7 +579,7 @@ Rune.initLogic({
             (b) => b.id === col.bodyAId
           )
           if (otherBall) {
-            game.firstHitBall = otherBall.data
+            game.firstHitBall = otherBall.data.col
           }
         }
       }
@@ -587,11 +595,12 @@ Rune.initLogic({
           if (ball) {
             physics.removeBody(game.world, ball)
             // ball potted
-            game.potted.push(ball.data)
+            game.potted.push(ball.data.col)
             game.events.push({
               id: game.nextEventId++,
               type: "potted",
-              data: ball.data,
+              data: ball.data.col,
+              num: ball.data.num,
             })
 
             const otherPlayers = allPlayerIds.filter(
@@ -602,10 +611,11 @@ Rune.initLogic({
 
             if (
               !game.playerCols[game.whoseTurn] &&
-              [RED, YELLOW].includes(ball.data)
+              [RED, YELLOW].includes(ball.data.col)
             ) {
-              game.playerCols[game.whoseTurn] = ball.data
-              game.playerCols[otherPlayer] = ball.data === RED ? YELLOW : RED
+              game.playerCols[game.whoseTurn] = ball.data.col
+              game.playerCols[otherPlayer] =
+                ball.data.col === RED ? YELLOW : RED
               game.shotsRemaining = 1
             }
           }
@@ -634,7 +644,10 @@ Rune.initLogic({
           1,
           1
         ) as physics.DynamicRigidBody
-        cueBall.data = WHITE
+        cueBall.data = {
+          col: WHITE,
+          num: 0,
+        }
         physics.addBody(game.world, cueBall)
         game.cueBallId = cueBall.id
         game.shot = false
@@ -658,7 +671,7 @@ Rune.initLogic({
           }
         } else if (currentCol === RED) {
           const remainingBalls = game.world.dynamicBodies.filter(
-            (b) => b.data === RED
+            (b) => b.data.col === RED
           ).length
           if (game.potted.includes(BLACK)) {
             if (remainingBalls > 0) {
@@ -676,7 +689,7 @@ Rune.initLogic({
           }
         } else if (currentCol === YELLOW) {
           const remainingBalls = game.world.dynamicBodies.filter(
-            (b) => b.data === YELLOW
+            (b) => b.data.col === YELLOW
           ).length
           if (game.potted.includes(BLACK)) {
             if (remainingBalls > 0) {
@@ -701,7 +714,7 @@ Rune.initLogic({
           game.events.push({ id: game.nextEventId++, type: "foul", data: "" })
         } else if (game.firstHitBall !== startingCol && startingCol) {
           const remainingBalls = game.world.dynamicBodies.filter(
-            (b) => b.data === startingCol
+            (b) => b.data.col === startingCol
           ).length
           if (game.firstHitBall === BLACK && remainingBalls === 0) {
             // hit the black when we have none left is not a foul

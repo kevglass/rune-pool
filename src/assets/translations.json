@@ -133,5 +133,35 @@
         "it": "Il tuo turno",
         "pl": "Twoja kolej",
         "lt": "Tavo eilė"
+    },
+    "stripes": {
+        "en": "stripes",
+        "ru": "полоски",
+        "pt": "listras",
+        "es": "rayas",
+        "fr": "rayures",
+        "de": "Streifen",
+        "da": "striber",
+        "tr": "çizgiler",
+        "uk": "смуги",
+        "nl": "strepen",
+        "it": "strisce",
+        "pl": "paski",
+        "lt": "juostelės"
+    },
+    "spots": {
+        "en": "spots",
+        "ru": "пятна",
+        "pt": "manchas",
+        "es": "manchas",
+        "fr": "taches",
+        "de": "Flecken",
+        "da": "pletter",
+        "tr": "lekeler",
+        "uk": "плями",
+        "nl": "vlekken",
+        "it": "macchie",
+        "pl": "plamy",
+        "lt": "dėmės"
     }
 }
