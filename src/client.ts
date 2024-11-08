@@ -195,19 +195,49 @@ function drawBall(
     const ypos = Math.sin(angY)
 
     const spaceSize = radius * 0.5
+    const radiusScale = 2.5
+    const edgeScale = 1.8
 
-    if (angY > Math.PI / 2 && angY < Math.PI * 1.5) {
-      ctx.translate(-xpos * radius, -ypos * radius)
-    } else {
-      ctx.translate(-xpos * radius, ypos * radius)
+    if (stripe) {
+      ctx.save()
+      // ctx.fillStyle = COLS[data.num]
+      // ctx.fillRect(-radius * 2, -stripeSize / 2, radius * 4, stripeSize)
+      ctx.strokeStyle = COLS[data.num]
+      ctx.lineWidth = stripeSize
+      ctx.translate(x, y)
+      ctx.rotate(angle / 360 + Math.PI * 2)
+      if (angY > Math.PI * 0.5 && angY < Math.PI * 1.5) {
+        ctx.beginPath()
+        ctx.moveTo(-radius * edgeScale, 0)
+        ctx.quadraticCurveTo(
+          0,
+          -ypos * radius * radiusScale,
+          radius * edgeScale,
+          0
+        )
+        ctx.stroke()
+      }
+      if (angY < Math.PI * 0.5 || angY > Math.PI * 1.5) {
+        ctx.beginPath()
+        ctx.moveTo(-radius * edgeScale, 0)
+        ctx.quadraticCurveTo(
+          0,
+          ypos * radius * radiusScale,
+          radius * edgeScale,
+          0
+        )
+        ctx.stroke()
+      }
+      ctx.restore()
     }
 
     ctx.translate(x, y)
     ctx.rotate(angle / 360 + Math.PI * 2)
 
-    if (stripe) {
-      ctx.fillStyle = COLS[data.num]
-      ctx.fillRect(-radius * 2, -stripeSize / 2, radius * 4, stripeSize)
+    if (angY > Math.PI / 2 && angY < Math.PI * 1.5) {
+      ctx.translate(-xpos * radius, -ypos * radius)
+    } else {
+      ctx.translate(-xpos * radius, ypos * radius)
     }
 
     if (

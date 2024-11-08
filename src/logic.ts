@@ -464,6 +464,8 @@ Rune.initLogic({
     cueBall.data = {
       col: WHITE,
       num: 0,
+      ox: TABLE_WIDTH / 6,
+      oy: TABLE_HEIGHT / 2,
     }
     physics.addBody(world, cueBall)
 
@@ -528,6 +530,8 @@ Rune.initLogic({
         ball.data = {
           col: order[index],
           num: numbers[index],
+          ox: TABLE_WIDTH * 0.6 + i * BALL_SIZE * 2 + (Math.random() * 1),
+          oy: -(i * BALL_SIZE) + j * BALL_SIZE * 2 + TABLE_HEIGHT / 2 + (Math.random() * 1),
         }
         index++
         physics.addBody(state.world, ball)
@@ -647,6 +651,8 @@ Rune.initLogic({
         cueBall.data = {
           col: WHITE,
           num: 0,
+          ox: TABLE_WIDTH / 6,
+          oy: TABLE_HEIGHT / 2,
         }
         physics.addBody(game.world, cueBall)
         game.cueBallId = cueBall.id
