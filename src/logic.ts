@@ -495,24 +495,7 @@ Rune.initLogic({
       computerTakeShotAt: 0,
     }
 
-    const order = [
-      YELLOW,
-      RED,
-      YELLOW,
-      YELLOW,
-      BLACK,
-      RED,
-      RED,
-      YELLOW,
-      RED,
-      YELLOW,
-      YELLOW,
-      RED,
-      RED,
-      YELLOW,
-      RED,
-    ]
-    const numbers = [1, 11, 5, 2, 8, 10, 6, 7, 14, 4, 6, 15, 13, 3, 12]
+    const numbers = [1, 11, 5, 2, 8, 10, 9, 7, 14, 4, 6, 15, 13, 3, 12]
     let index = 0
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j <= i; j++) {
@@ -528,10 +511,14 @@ Rune.initLogic({
           1
         )
         ball.data = {
-          col: order[index],
+          col: numbers[index] === 8 ? BLACK : numbers[index] < 8 ? YELLOW : RED,
           num: numbers[index],
-          ox: TABLE_WIDTH * 0.6 + i * BALL_SIZE * 2 + (Math.random() * 1),
-          oy: -(i * BALL_SIZE) + j * BALL_SIZE * 2 + TABLE_HEIGHT / 2 + (Math.random() * 1),
+          ox: TABLE_WIDTH * 0.6 + i * BALL_SIZE * 2 + Math.random() * 1,
+          oy:
+            -(i * BALL_SIZE) +
+            j * BALL_SIZE * 2 +
+            TABLE_HEIGHT / 2 +
+            Math.random() * 1,
         }
         index++
         physics.addBody(state.world, ball)

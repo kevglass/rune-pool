@@ -22,7 +22,7 @@ const COLS: Record<number, string> = {
   3: "#db1b18",
   4: "#800a7a",
   5: "#e85007",
-  6: "#e85007",
+  6: "#2ba610",
   7: "#990f0d",
   8: "black",
   9: "#e2e50e",
@@ -30,11 +30,11 @@ const COLS: Record<number, string> = {
   11: "#db1b18",
   12: "#800a7a",
   13: "#e85007",
-  14: "#e85007",
+  14: "#2ba610",
   15: "#990f0d",
 }
 
-const EIGHT_BALL = false
+const EIGHT_BALL = true
 const canvas = document.createElement("canvas")
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
