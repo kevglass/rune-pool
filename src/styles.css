@@ -104,7 +104,7 @@ canvas {
 
 #turn {
   pointer-events: none;
-  z-index: 1000;
+  z-index: 50;
   background-color: rgba(255,255,255,0.5);
   position: absolute;
   width: 40%;
@@ -146,6 +146,85 @@ canvas {
 .turnOn {
   bottom: 2%;
   animation: backgroundSlideOn 0.5s linear
+}
+
+#settingsButton {
+  background-image: url(assets/settingsbutton.png);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  width: 7vh;
+  height: 7vh;
+  right: 1vh;
+  top: 1vh;
+  position: absolute;
+  z-index: 100;
+}
+
+#settings {
+  background: rgba(0,0,0,0.5);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  display: none;
+}
+
+#settingsDialog {
+  width: 100vh;
+  height: 80vh;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -60%);
+  background-image: url(assets/popup.png);
+  background-size: 100% 100%;
+}
+
+#allSettings {
+  position: absolute;
+  top: 18vh;
+  left: 30vh;
+  font-size: 5vh;
+  color: white;
+  text-shadow: 0.5vh 0.5vh black;
+}
+
+.label {
+  margin-bottom: 0.5vh;
+}
+
+#allSettings select {
+  font-size: 5vh;
+  background-image: url(assets/space.png);
+  background-color: transparent;
+  border: 0;
+  background-size: 100% 100%;
+  width: 50vh;
+  color: gold;
+  padding: 1vh; 
+  -webkit-appearance: none;
+  outline: 0
+}
+
+.setting {
+  margin-bottom: 3vh;
+}
+
+#closeButton {
+  position: absolute;
+  width: 8vw;
+  height: 8vw;
+  right: 2vw;
+  top: 5vw;
+  font-size: 3vw;
+  color: white;
+  font-weight: bold;
+  font-family: Arial;
+  text-align: center;
+  background-image: url(assets/exit.png);
+  background-size: 100% 100%;
 }
 
 @keyframes backgroundSlideOff {

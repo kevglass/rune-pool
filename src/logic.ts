@@ -17,7 +17,7 @@ export const COMPUTER_SIM_TIME_FRAMES = 60 // 2 seconds
 
 export type GameEvent = {
   id: number
-  type: "potted" | "foul" | "shot"
+  type: "potted" | "foul" | "shot" | "ballHit" | "cushionHit"
   data: string
   num?: number
 }
@@ -36,6 +36,11 @@ export interface GameState {
   firstHitBall?: string
   nextEventId: number
   shot: boolean
+  // setup
+  spotsAndStripes: boolean
+  table: string
+  difficulty: string
+  // stuff for the computer player
   computerIndex: number
   computerWorld: physics.World
   computerStep: number
@@ -54,10 +59,21 @@ export interface GameState {
 
 type GameActions = {
   shot: (dir: { x: number; y: number }) => void
+  setDifficulty: (difficulty: string) => void
+  setTable: (table: string) => void
+  setBalls: (spotsAndStripes: boolean) => void
+}
+
+type PersistedData = {
+  difficulty: string
+  table: string
+  spotsAndStripes: boolean
+  played: number
+  won: number
 }
 
 declare global {
-  const Rune: RuneClient<GameState, GameActions>
+  const Rune: RuneClient<GameState, GameActions, PersistedData>
 }
 
 function createCushion(
@@ -423,7 +439,9 @@ function runComputerTurn(game: GameState) {
       game.computerBestAngle = game.computerMoveAngle
       game.computerBestResult = game.computerMoveResult
     }
-    game.computerIndex += COMPUTER_ANGLE_STEP
+    game.computerIndex += Math.floor(
+      COMPUTER_ANGLE_STEP * (game.difficulty === "hard" ? 0.25 : 1)
+    )
     game.computerStep = 0
   }
 }
@@ -451,7 +469,8 @@ Rune.initLogic({
   minPlayers: 1,
   maxPlayers: 2,
   landscape: true,
-  setup: (allPlayerIds) => {
+  persistPlayerData: true,
+  setup: (allPlayerIds, { game }) => {
     const world = physics.createWorld({ x: 0, y: 0 }, 0.25)
     const cueBall: physics.DynamicRigidBody = physics.createCircle(
       world,
@@ -493,6 +512,9 @@ Rune.initLogic({
       computerMoveAngle: 0,
       computerMovePower: 0,
       computerTakeShotAt: 0,
+      spotsAndStripes: game.persisted[allPlayerIds[0]]?.spotsAndStripes ?? true,
+      difficulty: game.persisted[allPlayerIds[0]]?.difficulty ?? "normal",
+      table: game.persisted[allPlayerIds[0]]?.table ?? "green",
     }
 
     const numbers = [1, 11, 5, 2, 8, 10, 9, 7, 14, 4, 6, 15, 13, 3, 12]
@@ -551,6 +573,20 @@ Rune.initLogic({
     const collisions = physics.worldStep(60, game.world)
     collisions.push(...physics.worldStep(60, game.world))
 
+    for (const col of collisions) {
+      const bodyA = game.world.dynamicBodies.find((b) => b.id === col.bodyAId)
+      const bodyB = game.world.dynamicBodies.find((b) => b.id === col.bodyBId)
+
+      if (bodyA && bodyB) {
+        game.events.push({ id: game.nextEventId++, type: "ballHit", data: "" })
+      } else {
+        game.events.push({
+          id: game.nextEventId++,
+          type: "cushionHit",
+          data: "",
+        })
+      }
+    }
     // fake the table resistence
     applyFriction(game.world)
 
@@ -752,6 +788,18 @@ Rune.initLogic({
   actions: {
     shot: (dir, { game, playerId }) => {
       takeShot(dir, game, playerId)
+    },
+    setDifficulty: (difficulty: string, { game, playerId }) => {
+      game.difficulty = difficulty
+      game.persisted[playerId].difficulty = difficulty
+    },
+    setTable: (table: string, { game, playerId }) => {
+      game.table = table
+      game.persisted[playerId].table = table
+    },
+    setBalls: (spotsAndStripes: boolean, { game, playerId }) => {
+      game.spotsAndStripes = spotsAndStripes
+      game.persisted[playerId].spotsAndStripes = spotsAndStripes
     },
   },
 })

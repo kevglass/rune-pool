@@ -16,6 +16,25 @@ import { getAssetUrl } from "./assets"
 import { PlayerId } from "rune-sdk"
 import { tr } from "./translate"
 
+const RACK: HTMLAudioElement = new Audio(getAssetUrl("sounds/rack.mp3"))
+const CUE: HTMLAudioElement = new Audio(getAssetUrl("sounds/cue.mp3"))
+const CUSHION: HTMLAudioElement[] = []
+for (let i = 1; i < 11; i++) {
+  CUSHION.push(new Audio(getAssetUrl("sounds/cushion" + i + ".mp3")))
+}
+const HITS: HTMLAudioElement[] = []
+for (let i = 1; i < 14; i++) {
+  HITS.push(new Audio(getAssetUrl("sounds/hit" + i + ".mp3")))
+}
+const POTS: HTMLAudioElement[] = []
+for (let i = 1; i < 14; i++) {
+  POTS.push(new Audio(getAssetUrl("sounds/pot.mp3")))
+}
+let nextCushion = 0
+let nextHit = 0
+let nextPot = 0
+let markerAngle = 0
+
 const COLS: Record<number, string> = {
   1: "#e2e50e",
   2: "#141895",
@@ -34,11 +53,14 @@ const COLS: Record<number, string> = {
   15: "#990f0d",
 }
 
-const EIGHT_BALL = true
+let spotsAndStripes = true
+let table = "blue"
+let difficulty = "normal"
+
 const canvas = document.createElement("canvas")
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
-const usedSpace = 0.8
+const usedSpace = 0.85
 const scale = Math.min(
   (window.innerWidth * usedSpace) / TABLE_WIDTH,
   (window.innerHeight * usedSpace) / TABLE_HEIGHT
@@ -61,6 +83,34 @@ type RackBall = {
 }
 
 let rack: RackBall[] = []
+let lastCol = ""
+
+div("settingsButton").addEventListener("click", () => {
+  select("difficultySelect").value = difficulty
+  select("tableSelect").value = table
+  select("ballsSelect").value = spotsAndStripes
+    ? "spotsAndStripes"
+    : "redAndYellow"
+  div("settings").style.display = "block"
+})
+
+div("closeButton").addEventListener("click", () => {
+  div("settings").style.display = "none"
+})
+
+select("difficultySelect").addEventListener("change", () => {
+  const difficulty = select("difficultySelect").value
+  Rune.actions.setDifficulty(difficulty)
+})
+select("tableSelect").addEventListener("change", () => {
+  table = select("tableSelect").value
+  Rune.actions.setTable(table)
+})
+
+select("ballsSelect").addEventListener("change", () => {
+  spotsAndStripes = select("ballsSelect").value === "spotsAndStripes"
+  Rune.actions.setBalls(spotsAndStripes)
+})
 
 function addRackBall(col: string, num: number) {
   rack.push({
@@ -81,6 +131,10 @@ let startY = 0
 let dx = 0
 let dy = 0
 let messageToShow: string = ""
+
+function select(id: string): HTMLSelectElement {
+  return document.getElementById(id) as HTMLSelectElement
+}
 
 function div(id: string): HTMLDivElement {
   return document.getElementById(id) as HTMLDivElement
@@ -155,7 +209,7 @@ function endDrag(x: number, y: number) {
 }
 
 let floorImage: HTMLImageElement
-let tableImage: HTMLImageElement
+let tableImages: Record<string, HTMLImageElement>
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve) => {
@@ -177,7 +231,7 @@ function drawBall(
 ): void {
   ctx.save()
 
-  if (EIGHT_BALL && data.col !== WHITE) {
+  if (spotsAndStripes && data.col !== WHITE) {
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, Math.PI * 2)
     ctx.clip()
@@ -264,7 +318,7 @@ function drawBall(
     ctx.fill()
   }
 
-  const shineWeight = EIGHT_BALL ? 0.25 : data.col === YELLOW ? 1 : 0.5
+  const shineWeight = spotsAndStripes ? 0.25 : data.col === YELLOW ? 1 : 0.5
   ctx.strokeStyle = "rgba(0,0,0,0.5)"
   ctx.beginPath()
   ctx.arc(x, y, radius, 0, Math.PI * 2)
@@ -296,7 +350,7 @@ function drawTable(game: GameState) {
   ctx.scale(scale, scale)
   const overdraw = 0.1
   ctx.drawImage(
-    tableImage,
+    tableImages[table] ?? tableImages["green"],
     -TABLE_WIDTH * overdraw,
     -TABLE_HEIGHT * overdraw,
     TABLE_WIDTH * (1 + overdraw * 2),
@@ -338,7 +392,26 @@ function drawTable(game: GameState) {
       }
     }
   }
-  if (mouseDown) {
+  for (const body of physics.allBodies(world)) {
+    const shape = body.shapes[0]
+    if (shape.type === physics.ShapeType.CIRCLE) {
+      if (atRest && body.data && body.data.col === WHITE) {
+        ctx.strokeStyle = "rgba(255,255,255,0.5)"
+        ctx.lineWidth = 1
+        ctx.save()
+        ctx.translate(body.center.x, body.center.y)
+        ctx.rotate(markerAngle)
+        ctx.setLineDash([2, 1])
+        ctx.beginPath()
+        ctx.arc(0, 0, shape.bounds * 1.2, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+        markerAngle += 0.05
+      }
+    }
+  }
+
+  if (mouseDown && atRest) {
     const cueBall = physics
       .allBodies(world)
       .find((body) => body.data.col === "white")
@@ -380,7 +453,9 @@ function drawTable(game: GameState) {
 
 function getAvatarUrl(id: string) {
   if (id === COMPUTER_ID) {
-    return getAssetUrl("robot.png")
+    return difficulty === "hard"
+      ? getAssetUrl("robot-hard.png")
+      : getAssetUrl("robot.png")
   }
   return Rune.getPlayerInfo(id).avatarUrl
 }
@@ -393,6 +468,18 @@ function getDisplayNameTurn(id: string) {
     return tr("Your Turn")
   }
   return tr("Bob's Turn").replace("Bob", Rune.getPlayerInfo(id).displayName)
+}
+
+function applyTurnIndicator(col: string = lastCol) {
+  lastCol = col
+
+  if (spotsAndStripes) {
+    div("turnColor").className = col === RED ? "stripes" : "spots"
+    div("turnColor").innerHTML = col === RED ? tr("stripes") : tr("spots")
+  } else {
+    div("turnColor").className = col === RED ? "red" : "yellow"
+    div("turnColor").innerHTML = col === RED ? tr("red") : tr("yellow")
+  }
 }
 
 function updateUI(game: GameState) {
@@ -417,13 +504,7 @@ function updateUI(game: GameState) {
     if (!col) {
       div("turnColor").style.display = "none"
     } else {
-      if (EIGHT_BALL) {
-        div("turnColor").className = col === RED ? "stripes" : "spots"
-        div("turnColor").innerHTML = col === RED ? tr("stripes") : tr("spots")
-      } else {
-        div("turnColor").className = col === RED ? "red" : "yellow"
-        div("turnColor").innerHTML = col === RED ? tr("red") : tr("yellow")
-      }
+      applyTurnIndicator(col)
       div("turnColor").style.display = "block"
     }
 
@@ -449,15 +530,31 @@ function showMessage(message: string) {
 }
 
 ;(async () => {
-  tableImage = await loadImage(getAssetUrl("table.png"))
+  tableImages = {
+    green: await loadImage(getAssetUrl("table.png")),
+    blue: await loadImage(getAssetUrl("table-blue.png")),
+    red: await loadImage(getAssetUrl("table-red.png")),
+  }
   floorImage = await loadImage(getAssetUrl("floor.png"))
   Rune.initClient({
     onChange: ({ game, yourPlayerId, action }) => {
       if (action && action.name === "shot") {
         messageToShow = ""
       }
+
+      if (table !== game.table) {
+        table = game.table
+      }
+      if (difficulty !== game.difficulty) {
+        difficulty = game.difficulty
+      }
+      if (spotsAndStripes !== game.spotsAndStripes) {
+        spotsAndStripes = game.spotsAndStripes
+        applyTurnIndicator()
+      }
       // reinit everything
       if (game.startGame) {
+        RACK.play()
         lastEventProcessed = 0
         shownTip = false
         localPlayerId = undefined
@@ -472,17 +569,36 @@ function showMessage(message: string) {
       drawTable(game)
       updateUI(game)
 
-      atRest = physics.atRest(game.world)
+      const nowAtRest = physics.atRest(game.world)
+      if (!nowAtRest && atRest) {
+        // things just started moving
+        messageToShow = ""
+        showMessage("")
+      }
+      atRest = nowAtRest
 
       for (const event of game.events) {
         if (event.id > lastEventProcessed) {
           lastEventProcessed = event.id
 
           // new event
+          if (event.type === "shot") {
+            CUE.play()
+          }
+          if (event.type === "ballHit") {
+            HITS[nextHit].play()
+            nextHit = (nextHit + 1) % HITS.length
+          }
+          if (event.type === "cushionHit") {
+            CUSHION[nextCushion].play()
+            nextCushion = (nextCushion + 1) % CUSHION.length
+          }
           if (event.type === "foul") {
             messageToShow = tr("Foul! 2 Shots!")
           }
           if (event.type === "potted") {
+            POTS[nextPot].play()
+            nextPot = (nextPot + 1) % POTS.length
             if (event.data !== WHITE) {
               setTimeout(() => {
                 addRackBall(event.data, event.num!)
