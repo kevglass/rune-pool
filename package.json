@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "propel-js": "1.0.24",
-    "rune-sdk": "^4.24.5"
+    "rune-sdk": "4.25.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.7.0",
