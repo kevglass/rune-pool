@@ -5,6 +5,27 @@ const lang =
     ? navigator.languages[0].substring(0, 2)
     : navigator.language.substring(0, 2)
 
+const translateElements = [
+  "tableLabel",
+  "greenValue",
+  "blueValue",
+  "redValue",
+  "ballsLabel",
+  "spotsAndStripesValue",
+  "redAndYellowValue",
+  "difficultyLabel",
+  "normalValue",
+  "hardValue",
+]
+
+for (const id of translateElements) {
+  const element = document.getElementById(id)
+  if (element) {
+    element.innerHTML = tr(element.innerHTML)
+  } else {
+    console.log("Element not found for translation: " + id)
+  }
+}
 export function tr(text: string): string {
   const data = translations as Record<string, Record<string, string>>
   const match = data[text]
