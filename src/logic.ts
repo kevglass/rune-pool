@@ -36,6 +36,7 @@ export interface GameState {
   firstHitBall?: string
   nextEventId: number
   shot: boolean
+  startingColor?: string
   // setup
   spotsAndStripes: boolean
   table: string
@@ -555,6 +556,7 @@ Rune.initLogic({
     game.startGame = false
     if (physics.atRest(game.world)) {
       game.atRest = true
+      game.startingColor = game.playerCols[game.whoseTurn]
       if (game.whoseTurn === COMPUTER_ID) {
         if (game.computerTakeShotAt === 0) {
           runComputerTurn(game)
@@ -654,7 +656,6 @@ Rune.initLogic({
       game.shotsRemaining--
 
       // evaluate the game now the world has come to rest
-      const startingCol = game.playerCols[game.whoseTurn]
       const currentCol = game.playerCols[game.whoseTurn]
       const otherPlayers = allPlayerIds.filter((i) => i !== game.whoseTurn)
       const otherPlayer =
@@ -662,7 +663,7 @@ Rune.initLogic({
 
       const pottedWhite = game.potted.includes(WHITE)
 
-      if (pottedWhite) {
+      if (pottedWhite && !game.potted.includes(BLACK)) {
         const cueBall: physics.DynamicRigidBody = physics.createCircle(
           game.world,
           { x: TABLE_WIDTH / 6, y: TABLE_HEIGHT / 2 },
@@ -741,9 +742,12 @@ Rune.initLogic({
           game.whoseTurn = otherPlayer
           game.shotsRemaining = 2
           game.events.push({ id: game.nextEventId++, type: "foul", data: "" })
-        } else if (game.firstHitBall !== startingCol && startingCol) {
+        } else if (
+          game.firstHitBall !== game.startingColor &&
+          game.startingColor
+        ) {
           const remainingBalls = game.world.dynamicBodies.filter(
-            (b) => b.data.col === startingCol
+            (b) => b.data.col === game.startingColor
           ).length
           if (game.firstHitBall === BLACK && remainingBalls === 0) {
             // hit the black when we have none left is not a foul

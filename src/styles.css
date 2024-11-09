@@ -182,6 +182,29 @@ canvas {
   background-size: 100% 100%;
 }
 
+#dragPath {
+  width: 40%;
+  top: 70%;
+  height: 1vh;
+  position: absolute;
+  left: 27%;
+  background: transparent;
+  border-bottom: 1vh solid rgba(255,255,255,0.5);
+  z-index: 99;
+  border-bottom-style: dashed;
+}
+
+#dragHand {
+  width: 7vh;
+  height: 7vh;
+  top: 70%;
+  position: absolute;
+  background-image: url(assets/tap.png);
+  background-size: 100% 100%;
+  z-index: 100;
+  animation: slideLeft 3s linear infinite
+}
+
 #allSettings {
   position: absolute;
   top: 18vh;
@@ -225,6 +248,18 @@ canvas {
   text-align: center;
   background-image: url(assets/exit.png);
   background-size: 100% 100%;
+}
+
+@keyframes slideLeft {
+  100% {
+    right: 30%;
+  }
+  50% {
+    right: 70%;
+  }
+  0% {
+    right: 30%;
+  }
 }
 
 @keyframes backgroundSlideOff {

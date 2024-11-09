@@ -182,6 +182,7 @@ function startDrag(x: number, y: number) {
   startX = x
   startY = y
   div("message").style.display = "none"
+  div("help").style.display = "none"
   messageToShow = ""
 }
 
@@ -526,6 +527,7 @@ function showMessage(message: string) {
     div("message").style.display = "block"
   } else {
     div("message").style.display = "none"
+    div("help").style.display = "none"
   }
 }
 
