@@ -32,7 +32,6 @@ if (!window.parentDoc) {
 }
 
 setTimeout(() => {
-  console.log("Loading")
   const overlay = document.getElementById("loading")
   if (overlay) {
     overlay.parentNode.removeChild(overlay)
