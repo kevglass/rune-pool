@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "propel-js": "1.0.24",
+    "propel-js": "1.0.25",
     "rune-sdk": "4.25.2"
   },
   "devDependencies": {

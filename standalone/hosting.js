@@ -1,7 +1,8 @@
-// prevent accidental multiple includsions
+
+
 if (!window.parentDoc) {
   window.parentDoc = window.parent.document
-
+ 
   // // set the background to white
   window.parentDoc.body.style.background = "#FFF"
   // remove the top bar
@@ -29,3 +30,11 @@ if (!window.parentDoc) {
     }
   }, 1)
 }
+
+setTimeout(() => {
+  console.log("Loading")
+  const overlay = document.getElementById("loading")
+  if (overlay) {
+    overlay.parentNode.removeChild(overlay)
+  }
+}, 1000)

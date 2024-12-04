@@ -1046,10 +1046,10 @@ prettier@^3.3.3:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
   integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
 
-propel-js@1.0.24:
-  version "1.0.24"
-  resolved "https://registry.yarnpkg.com/propel-js/-/propel-js-1.0.24.tgz#372db404bbfdcaa3ca38f0b4d53dd9d26c67547c"
-  integrity sha512-cT7PkL+eQPlZlnTEC0eWoJmdKeo2HHLjIB86FGo6+3Vs5Kr7vGHgsBmUjW5bUevx4Fcca5nFQAC++fyvE3Ancg==
+propel-js@1.0.25:
+  version "1.0.25"
+  resolved "https://registry.yarnpkg.com/propel-js/-/propel-js-1.0.25.tgz#aabb454c8319c90d8c16302baa2386765f0b193c"
+  integrity sha512-zdkyJDXrm9xjVxvXw9KfxrkA1HHY6dArRn3UysFPqlLz5GzlkwStvcdECY6AhzNfn0+JtixwiwzEOm8u0dvSdA==
 
 punycode@^2.1.0:
   version "2.3.1"

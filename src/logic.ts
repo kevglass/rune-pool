@@ -473,6 +473,7 @@ Rune.initLogic({
   persistPlayerData: true,
   setup: (allPlayerIds, { game }) => {
     const world = physics.createWorld({ x: 0, y: 0 }, 0.25)
+    world.iterationCount = 5
     const cueBall: physics.DynamicRigidBody = physics.createCircle(
       world,
       { x: TABLE_WIDTH / 6, y: TABLE_HEIGHT / 2 },
